@@ -1,64 +1,35 @@
 #!/usr/bin/python3
-# script to gather data from an API
+"""
+Returns to-do list information for a given employee ID.
+
+This script takes an employee ID as a command-line argument and fetches
+the corresponding user information and to-do list from the JSONPlaceholder API.
+It then prints the tasks completed by the employee.
+"""
+
 import requests
 import sys
 
 
-def get_username(base_url, user_id):
-    """Gets username
-       Args:
-           base_url (str): base url for API
-           user_id (str): user id number
-       Returns: username
-    """
-    response = requests.get(
-        "{}users/{}".format(base_url, user_id))
-    usr_dict = response.json()
-    return usr_dict['name']
+if __name__ == "__main__":
+    # Base URL for the JSONPlaceholder API
+    url = "https://jsonplaceholder.typicode.com/"
 
+    # Get the employee information using the provided employee ID
+    employee_id = sys.argv[1]
+    user = requests.get(url + "users/{}".format(employee_id)).json()
 
-def get_todo_list(base_url, user_id):
-    """Gets todo list
-       Args:
-           base_url (str): base url for API
-           user_id (str): user id number
-       Returns: list of todo items (dicts)
-    """
-    response = requests.get(
-        "{}users/{}/todos".format(base_url, user_id))
-    return response.json()
+    # Get the to-do list for the employee using the provided employee ID
+    params = {"userId": employee_id}
+    todos = requests.get(url + "todos", params).json()
 
+    # Filter completed tasks and count them
+    completed = [t.get("title") for t in todos if t.get("completed") is True]
 
-def get_completed(todo_list):
-    """Gets completed items
-       Args:
-           todo_list (list): list of todo items
-       Returns: string of todo items to print
-    """
+    # Print the employee's name and the number of completed tasks
+    print("Employee {} is done with tasks({}/{}):".format(
+        user.get("name"), len(completed), len(todos)))
 
-    done_str = ""
-    done_list = []
-    count = 0
-    for todo in todo_list:
-        if todo['completed'] is True:
-            count += 1
-            done_list.append("\t {}".format(todo['title']))
-    done_str = "\n".join(done_list)
+    # Print the completed tasks one by one with indentation
+    [print("\t {}".format(complete)) for complete in completed]
 
-    return count, done_str
-
-
-if __name__ == '__main__':
-    user_id = sys.argv[1]
-    base_url = 'https://jsonplaceholder.typicode.com/'
-
-    uname = get_username(base_url, user_id)
-    todo_list = get_todo_list(base_url, user_id)
-    total = len(todo_list)
-
-    count, done_str = get_completed(todo_list)
-
-    print(
-        "Employee {} is done with tasks({}/{}):".format(uname, count, total))
-    if count > 0:
-        print(done_str)
